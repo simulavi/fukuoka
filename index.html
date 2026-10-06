@@ -1,0 +1,1118 @@
+<!doctype html>
+<html lang="ko">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Fukuoka · Day 1–4</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: #e5e8e1;
+      color: #263e40;
+      font: 14px system-ui;
+    }
+    canvas {
+      display: block;
+    }
+    aside {
+      position: fixed;
+      z-index: 2;
+      left: 24px;
+      top: 24px;
+      width: 292px;
+      padding: 23px;
+      background: #f8faf5ed;
+      border: 1px solid #fff;
+      border-radius: 18px;
+      box-shadow: 0 10px 45px #213b3e15;
+    }
+    small {
+      letter-spacing: 3px;
+      color: #618080;
+      font-size: 10px;
+    }
+    p {
+      line-height: 1.65;
+      color: #617273;
+      font-size: 12px;
+    }
+    button {
+      cursor: pointer;
+      border: 1px solid #bdcbc7;
+      background: #fff;
+      color: #365a5a;
+      padding: 9px 12px;
+      border-radius: 7px;
+      margin: 3px 3px 3px 0;
+    }
+    button:hover {
+      background: #e1e9e1;
+    }
+    .row {
+      margin-top: 20px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      margin: 12px 0;
+    }
+    input[type="range"] {
+      display: block;
+      width: 100%;
+      margin: 0;
+      accent-color: #478983;
+    }
+    footer {
+      flex: 0 0 auto;
+      margin: 12px 0 0;
+      padding-top: 10px;
+      border-top: 1px solid #d5ddd8;
+      font-size: 10px;
+      line-height: 1.45;
+      color: #618080;
+    }
+    a {
+      color: inherit;
+    }
+    .pin {
+      --pin: #c5ddd9;
+      position: absolute;
+      font-size: 11px;
+      background: var(--pin);
+      color: #274c50;
+      padding: 5px 9px;
+      border-radius: 5px;
+      transform: translate(-50%, calc(-100% - 7px));
+      pointer-events: auto;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .pin.selected {
+      --pin: #274c50;
+      color: #fff;
+    }
+    .pin.locked {
+      --pin: #8d9492;
+      color: #fff;
+    }
+    .pin::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -7px;
+      transform: translateX(-50%);
+      border-width: 7px 6px 0;
+      border-style: solid;
+      border-color: var(--pin) transparent transparent;
+    }
+    .pin.compact .pin-sep,
+    .pin.compact .pin-label {
+      display: none;
+    }
+    .pin-mark,
+    .pin-sep {
+      vertical-align: top;
+    }
+    .pin-mark {
+      display: inline-flex;
+      align-items: center;
+    }
+    .pin-label {
+      display: inline-block;
+      vertical-align: top;
+      white-space: nowrap;
+      text-align: left;
+    }
+    .pin .name-ko,
+    .pin .name-ja {
+      white-space: nowrap;
+    }
+    .name-ko,
+    .name-ja {
+      display: block;
+    }
+    .pin-mark svg {
+      width: 11px;
+      height: 11px;
+      display: block;
+    }
+    .station {
+      position: absolute;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 999px;
+      transform: translate(-50%, calc(-100% - 8px));
+      white-space: nowrap;
+      box-shadow: 0 0 0 2px #fff, 0 1px 2px rgba(0, 0, 0, 0.35);
+      pointer-events: none;
+    }
+    #labels {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+    #err {
+      color: #a33;
+    }
+    @media (max-width: 600px), (max-width: 900px) and (max-height: 900px) {
+      aside {
+        left: 10px;
+        top: 10px;
+        width: 235px;
+        padding: 14px;
+      }
+      .row {
+        margin-top: 8px;
+      }
+    }
+    aside {
+      width: 330px;
+      max-height: 94vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #panelHead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    #panelHead small {
+      min-width: 0;
+    }
+    .timeControl {
+      margin: 12px 0;
+    }
+    .timeHead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 0 6px;
+    }
+    .timeHead label {
+      margin: 0;
+    }
+    .timeTools {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #helpToggle,
+    #settingsToggle {
+      width: 20px;
+      height: 20px;
+      margin: 0;
+      padding: 0;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+    #settingsToggle svg {
+      width: 12px;
+      height: 12px;
+      display: block;
+      margin: 0 auto;
+    }
+    #panelBody {
+      flex: 1 1 auto;
+      overflow-x: hidden;
+      overflow-y: auto;
+      min-height: 0;
+    }
+    .days {
+      display: flex;
+      align-items: flex-end;
+      margin: 2px 0 16px;
+      border-bottom: 7px solid #285b5b;
+    }
+    .days button {
+      flex: 1 1 0;
+      position: relative;
+      z-index: 1;
+      margin: 0 -10px 0 0;
+      padding: 9px 14px 8px 8px;
+      border: 2px solid #b0bbb7;
+      border-radius: 13px 20px 0 0;
+      color: #365a5a;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0;
+      white-space: nowrap;
+      background: #e7f2ee;
+    }
+    .days button:last-child {
+      margin-right: 0;
+    }
+    .days button:nth-child(1) {
+      z-index: 4;
+    }
+    .days button:nth-child(2) {
+      z-index: 3;
+    }
+    .days button:nth-child(3) {
+      z-index: 2;
+    }
+    .days button.active {
+      z-index: 6;
+      padding-top: 12px;
+      color: #fff;
+      border-color: #285b5b;
+      background: #285b5b;
+    }
+    .days button:hover {
+      background: #e7f2ee;
+    }
+    .days button.active:hover {
+      background: #285b5b;
+    }
+    #stops {
+      margin-top: 14px;
+    }
+    .stop {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      margin: 0;
+      padding: 10px;
+      text-align: left;
+      border: 1px solid #d5e0dc;
+      border-radius: 12px;
+      background: #fff;
+    }
+    .stop:hover {
+      background: #f7fbf9;
+    }
+    .stop.selected,
+    .stop.selected:hover {
+      border-color: #285b5b;
+      background: #f4faf8;
+    }
+    .stop-copy {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .stop-number {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: #e7f2ee;
+      color: #285b5b;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .stop.selected .stop-number {
+      background: #285b5b;
+      color: #fff;
+    }
+    .stop time {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      color: #3f7d76;
+    }
+    .stop strong {
+      display: block;
+      margin-top: 2px;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+    .stop .name-ja {
+      margin-top: 1px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #618080;
+    }
+    .thumb,
+    .placePhoto {
+      background: #e7f2ee;
+    }
+    .thumb {
+      width: 52px;
+      height: 52px;
+      margin-left: auto;
+      flex: 0 0 auto;
+      border-radius: 9px;
+      overflow: hidden;
+    }
+    .thumb[data-empty="1"] {
+      background:
+        radial-gradient(circle at 50% 42%, #fff 0 7px, transparent 8px),
+        linear-gradient(#d7e6e1, #f4f8f6);
+    }
+    .thumb img,
+    .placePhoto img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .leg {
+      margin: 4px 0 4px 21px;
+      padding: 2px 0 2px 14px;
+      border-left: 1px dashed #b7c7c2;
+      color: #6a7a78;
+      font-size: 10px;
+      line-height: 1.6;
+    }
+    #selected {
+      font-size: 11px;
+      line-height: 1.5;
+      color: #6a7a78;
+    }
+    #unvisitedRow {
+      display: flex;
+      flex: 0 0 auto;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      margin: 8px 0 14px;
+    }
+    #unvisitedRow label {
+      margin: 0;
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+    #landmarkJump {
+      flex: 1 1 auto;
+      display: block;
+      width: auto;
+      min-width: 0;
+      padding: 9px;
+      margin: 0;
+      border: 1px solid #a8b8b3;
+      border-radius: 8px;
+      background: #f5f9f6;
+      color: #294f4c;
+      font: inherit;
+    }
+    .row {
+      margin-top: 10px;
+    }
+    @media (max-width: 600px), (max-width: 900px) and (max-height: 900px) {
+      aside {
+        width: 245px;
+        max-height: 65vh;
+      }
+    }
+    #regionalBackdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .regionalSky {
+      position: absolute;
+      inset: 0 0 auto;
+      height: 40%;
+    }
+    .regionalStars {
+      position: absolute;
+      inset: 0;
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+    }
+    body > canvas {
+      position: relative;
+      z-index: 1;
+    }
+    #labels {
+      z-index: 2;
+    }
+    aside {
+      z-index: 3;
+    }
+    #panelToggle {
+      position: static;
+      flex: 0 0 auto;
+      z-index: 2;
+      width: 34px;
+      height: 34px;
+      margin: 0;
+      padding: 0;
+      border-radius: 10px;
+      font-size: 20px;
+      line-height: 1;
+    }
+    aside.collapsed {
+      width: 52px;
+      height: 52px;
+      padding: 8px;
+      overflow: hidden;
+      max-height: none;
+    }
+    aside.collapsed .days,
+    aside.collapsed .timeControl,
+    aside.collapsed #panelBody,
+    aside.collapsed #panelHead small,
+    aside.collapsed footer {
+      display: none;
+    }
+    #panelClock {
+      display: none;
+      position: fixed;
+      z-index: 4;
+      top: calc(14px + env(safe-area-inset-top, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+      padding: 0;
+      background: none;
+      border: 0;
+      color: #274c50;
+      font-size: 15px;
+      font-weight: 700;
+      pointer-events: none;
+      -webkit-text-stroke: 1px #fff;
+      paint-order: stroke fill;
+    }
+    aside.collapsed ~ #panelClock,
+    html.arrival #panelClock {
+      display: block;
+    }
+    #helpDialog,
+    #placeDialog,
+    #settingsDialog {
+      position: fixed;
+      z-index: 5;
+      margin: 0;
+    }
+    #helpDialog {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 1px solid #fff;
+      border-radius: 16px;
+      padding: 22px 22px 16px;
+      background: #f8faf5;
+      color: #263e40;
+      width: min(320px, calc(100vw - 32px));
+      box-shadow: 0 10px 45px #213b3e22;
+    }
+    #helpDialog p {
+      margin: 0 0 16px;
+      line-height: 1.7;
+      font-size: 13px;
+      color: #4d6362;
+    }
+    #helpDialog button {
+      display: block;
+      margin: 0 0 0 auto;
+    }
+    #settingsDialog {
+      top: 156px;
+      left: 36px;
+      width: min(320px, calc(100vw - 48px));
+      border: 1px solid #fff;
+      border-radius: 16px;
+      padding: 28px 16px 12px;
+      background: #f8faf5;
+      color: #263e40;
+      box-shadow: 0 10px 45px #213b3e22;
+    }
+    #settingsDialog label {
+      margin: 10px 0;
+    }
+    #settingsClose {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      width: auto;
+      height: auto;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      font-size: 20px;
+      line-height: 1;
+    }
+    #settingsClose:hover {
+      background: transparent;
+    }
+    #placeNext {
+      display: block;
+      width: 100%;
+      margin: 12px 0 0;
+    }
+    #placeNext:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+    #placeClose {
+      position: absolute;
+      z-index: 1;
+      top: 8px;
+      right: 10px;
+      width: auto;
+      height: auto;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      font-size: 20px;
+      line-height: 1;
+    }
+    #placeClose:hover {
+      background: transparent;
+    }
+    #placeDialog {
+      top: 50%;
+      right: 24px;
+      left: auto;
+      transform: translateY(-50%);
+      border: 1px solid #fff;
+      border-radius: 16px;
+      padding: 16px 16px 14px;
+      background: #f8faf5;
+      color: #263e40;
+      width: min(340px, calc(100vw - 32px));
+      box-shadow: 0 10px 45px #213b3e22;
+    }
+    .placePhoto {
+      display: flex;
+      gap: 8px;
+      height: 148px;
+      border-radius: 12px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      margin-bottom: 12px;
+      scroll-snap-type: x mandatory;
+    }
+    .placePhoto img {
+      flex: 0 0 100%;
+      scroll-snap-align: start;
+    }
+    .placePhoto[data-gallery="1"] img {
+      flex-basis: 82%;
+      width: 82%;
+    }
+    .placePhoto[data-empty="1"] {
+      display: grid;
+      place-items: center;
+      color: #7d918e;
+      font-size: 12px;
+    }
+    .place-kicker {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .place-kicker .name-ja {
+      font-size: 13px;
+      font-weight: 600;
+      color: #3c6462;
+    }
+    #placeBody .eyebrow {
+      letter-spacing: 1px;
+      font-size: 11px;
+      color: #618080;
+    }
+    #placeBody .place-notes {
+      margin: 8px 0 0;
+      padding-left: 1.15em;
+      font-size: 12px;
+      line-height: 1.55;
+      color: #4d6362;
+    }
+    #placeBody .place-notes li {
+      margin: 2px 0;
+    }
+    #placeBody h3 {
+      margin: 4px 0 10px;
+      font-size: 18px;
+    }
+    #placeBody h3 .name-ja {
+      margin-top: 2px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #618080;
+    }
+    #placeBody p {
+      margin: 6px 0;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #4d6362;
+    }
+    aside.collapsed #panelHead {
+      margin: 0;
+    }
+    aside.collapsed #stops,
+    aside.collapsed #unvisitedRow {
+      display: none;
+    }
+    #zoomControls {
+      display: none;
+    }
+    @media (max-width: 600px), (max-width: 900px) and (max-height: 900px) {
+      #panelBody {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      #stops {
+        display: flex;
+        flex: 0 0 auto;
+        flex-direction: row;
+        align-items: stretch;
+        gap: 8px;
+        width: 100%;
+        min-width: 0;
+        min-height: 72px;
+        margin: 0 0 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x;
+        scrollbar-width: thin;
+      }
+      #unvisitedRow {
+        gap: 6px;
+        margin: 0 0 8px;
+      }
+      #unvisitedRow label {
+        font-size: 11px;
+      }
+      #zoomControls {
+        position: fixed;
+        z-index: 4;
+        top: calc(10px + env(safe-area-inset-top, 0px));
+        right: calc(10px + env(safe-area-inset-right, 0px));
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      #zoomControls button {
+        width: 44px;
+        height: 44px;
+        margin: 0;
+        padding: 0;
+        border-radius: 12px;
+        background: #f8faf5ed;
+        box-shadow: 0 10px 45px #213b3e15;
+        font-size: 22px;
+        line-height: 1;
+      }
+      #stops .stop {
+        flex: 0 0 auto;
+        width: max-content;
+        min-width: 132px;
+        max-width: 196px;
+        scroll-snap-align: start;
+      }
+      #stops .stop strong {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        font-size: 12px;
+      }
+      #stops .thumb {
+        width: 36px;
+        height: 36px;
+      }
+      #stops .leg {
+        display: flex;
+        flex: 0 0 auto;
+        flex-direction: column;
+        align-self: center;
+        align-items: stretch;
+        max-width: 88px;
+        margin: 0;
+        padding: 0 2px;
+        border-left: 0;
+        text-align: center;
+        white-space: normal;
+      }
+      #stops .leg::after {
+        content: "";
+        display: block;
+        margin-top: 4px;
+        border-bottom: 2px dotted #8aa09c;
+      }
+      #helpDialog,
+      #placeDialog,
+      #settingsDialog {
+        top: auto;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        transform: none;
+        width: 100%;
+        max-width: none;
+        max-height: min(68vh, 520px);
+        margin: 0;
+        overflow: auto;
+        border-radius: 18px 18px 0 0;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+      }
+      #placeDialog {
+        padding-top: 28px;
+      }
+      .placePhoto {
+        height: 120px;
+      }
+    }
+    html.arrival aside,
+    html.arrival #labels,
+    html.arrival #zoomControls {
+      display: none;
+    }
+    #introSkip {
+      position: fixed;
+      z-index: 8;
+      top: calc(14px + env(safe-area-inset-top, 0px));
+      right: calc(14px + env(safe-area-inset-right, 0px));
+      min-width: 72px;
+      height: 40px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 12px;
+      background: #f8faf5ed;
+      box-shadow: 0 10px 45px #213b3e15;
+      color: #213b3e;
+      font: 600 14px/1 sans-serif;
+      cursor: pointer;
+    }
+    html:not(.arrival) #introSkip {
+      display: none;
+    }
+    #radio {
+      position: fixed;
+      z-index: 6;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      width: min(440px, calc(100vw - 28px));
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+    #radio[hidden] {
+      display: none;
+    }
+    #radioLog {
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+    .radioLine,
+    #radioForm {
+      position: relative;
+    }
+    .radioLine {
+      max-width: 92%;
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #f8faf5;
+      color: #263e40;
+      box-shadow: 0 8px 28px #213b3e22;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .radioLine::after,
+    #radioForm::after {
+      content: "";
+      position: absolute;
+      bottom: 10px;
+      width: 0;
+      height: 0;
+      border-style: solid;
+    }
+    .radioLine::after {
+      left: -8px;
+      border-width: 6px 9px 6px 0;
+      border-color: transparent #f8faf5 transparent transparent;
+    }
+    .radioLine b {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 10px;
+      letter-spacing: 0.4px;
+      opacity: 0.7;
+    }
+    .radioLine.pilot {
+      margin-left: auto;
+      background: #285b5b;
+      color: #fff;
+    }
+    .radioLine.pilot::after,
+    #radioForm::after {
+      left: auto;
+      right: -8px;
+      border-width: 6px 0 6px 9px;
+      border-color: transparent transparent transparent #285b5b;
+    }
+    #radioForm {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      max-width: 92%;
+      margin-left: auto;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #285b5b;
+      color: #fff;
+      box-shadow: 0 8px 28px #213b3e22;
+    }
+    #radioForm[hidden] {
+      display: none;
+    }
+    #radioForm label {
+      margin: 0;
+      color: #fff;
+      font-size: 12px;
+    }
+    #radioForm button {
+      background: #fff;
+      color: #285b5b;
+      border-color: transparent;
+    }
+    #radioCode,
+    #radioCode:focus,
+    #radioCode:focus-visible {
+      flex: 1 1 120px;
+      min-width: 0;
+      padding: 8px 10px;
+      border: 1px solid #d7ebe4;
+      border-radius: 8px;
+      background: #fff;
+      color: #1d3d3d;
+      font: inherit;
+      outline: none;
+      box-shadow: none;
+    }
+    #radioCode:-webkit-autofill {
+      -webkit-text-fill-color: #1d3d3d;
+      box-shadow: 0 0 0 1000px #fff inset;
+    }
+    #radioHint {
+      flex: 1 0 100%;
+      margin: 0;
+      color: #ffd2d2;
+      font-size: 12px;
+    }
+    #radioHint:empty {
+      display: none;
+    }
+  </style>
+  <script>function _0x4dc8(_0x303fce,_0x346831){_0x303fce=_0x303fce-0x1d7;var _0x5970c6=_0x5970();var _0x4dc806=_0x5970c6[_0x303fce];if(_0x4dc8['xhozQI']===undefined){var _0x4cb316=function(_0x2c82d0){var _0x3b99a0='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';var _0x375b70='',_0x44c585='';for(var _0x7af97f=0x0,_0x94cbc0,_0xe6f29,_0x4cec39=0x0;_0xe6f29=_0x2c82d0['charAt'](_0x4cec39++);~_0xe6f29&&(_0x94cbc0=_0x7af97f%0x4?_0x94cbc0*0x40+_0xe6f29:_0xe6f29,_0x7af97f++%0x4)?_0x375b70+=String['fromCharCode'](0xff&_0x94cbc0>>(-0x2*_0x7af97f&0x6)):0x0){_0xe6f29=_0x3b99a0['indexOf'](_0xe6f29);}for(var _0x540e0f=0x0,_0x3a328f=_0x375b70['length'];_0x540e0f<_0x3a328f;_0x540e0f++){_0x44c585+='%'+('00'+_0x375b70['charCodeAt'](_0x540e0f)['toString'](0x10))['slice'](-0x2);}return decodeURIComponent(_0x44c585);};_0x4dc8['jjzMTS']=_0x4cb316,_0x4dc8['fGXAiZ']={},_0x4dc8['xhozQI']=!![];}var _0x465c9f=_0x5970c6[0x0],_0x4cf5ab=_0x303fce+_0x465c9f,_0x41eb01=_0x4dc8['fGXAiZ'][_0x4cf5ab];return!_0x41eb01?(_0x4dc806=_0x4dc8['jjzMTS'](_0x4dc806),_0x4dc8['fGXAiZ'][_0x4cf5ab]=_0x4dc806):_0x4dc806=_0x41eb01,_0x4dc806;}var _0xffc371=_0x4dc8;(function(_0x276dc9,_0x4318b1){var _0x4291ab=_0x4dc8,_0x27d755=_0x276dc9();while(!![]){try{var _0x1a5429=parseInt(_0x4291ab(0x1e0))/0x1+-parseInt(_0x4291ab(0x1e1))/0x2+parseInt(_0x4291ab(0x1d7))/0x3*(-parseInt(_0x4291ab(0x1db))/0x4)+-parseInt(_0x4291ab(0x1df))/0x5+parseInt(_0x4291ab(0x1de))/0x6+-parseInt(_0x4291ab(0x1dc))/0x7+-parseInt(_0x4291ab(0x1d9))/0x8*(-parseInt(_0x4291ab(0x1e3))/0x9);if(_0x1a5429===_0x4318b1)break;else _0x27d755['push'](_0x27d755['shift']());}catch(_0x3d7988){_0x27d755['push'](_0x27d755['shift']());}}}(_0x5970,0x97f2a),document[_0xffc371(0x1e2)][_0xffc371(0x1d8)][_0xffc371(0x1dd)](_0xffc371(0x1da)));function _0x5970(){var _0x4571a4=['y2XHC3nmAxn0','mJKYnZjxt0Teshq','yxjYAxzHBa','mJKYuhn6weDr','nZC1ndK3ognMAMj1DW','ywrK','ndu3otmYnKLjCe9lCq','nJeWnZi2nwjTELnywq','ntuWnde3rKnptevk','mJa4ody5ogfjAfDuDW','zg9JDw1LBNrfBgvTzw50','ota2m3j5se5SrW','ndeXodDLsMPwsKK'];_0x5970=function(){return _0x4571a4;};return _0x5970();}</script>
+  <aside>
+    <div id="panelHead">
+      <small>MY / FUKUOKA / CITY TOUR</small>
+      <button id="panelToggle" type="button" aria-expanded="true" aria-label="패널 접기">‹</button>
+    </div>
+    <div class="days">
+      <button data-day="1" class="active" aria-pressed="true">Day 1</button>
+      <button data-day="2" aria-pressed="false">Day 2</button>
+      <button data-day="3" aria-pressed="false">Day 3</button>
+      <button data-day="4" aria-pressed="false">Day 4</button>
+    </div>
+    <div id="panelBody">
+    <div class="timeControl">
+      <div class="timeHead">
+        <label for="time"><b id="hour">6:05 pm</b></label>
+        <span class="timeTools">
+          <button id="helpToggle" type="button" aria-label="안내">?</button>
+          <button id="settingsToggle" type="button" aria-label="설정" aria-expanded="false">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M9.4 1.2 9.7 3a4.8 4.8 0 0 1 1.2.7l1.7-.7 1.2 2-1.4 1.1a4.8 4.8 0 0 1 0 1.8l1.4 1.1-1.2 2-1.7-.7a4.8 4.8 0 0 1-1.2.7l-.3 1.8H6.6L6.3 11a4.8 4.8 0 0 1-1.2-.7l-1.7.7-1.2-2 1.4-1.1a4.8 4.8 0 0 1 0-1.8L2.2 5l1.2-2 1.7.7A4.8 4.8 0 0 1 6.3 3l.3-1.8h2.8zM8 6.1a1.9 1.9 0 1 0 0 3.8 1.9 1.9 0 0 0 0-3.8z"
+              />
+            </svg>
+          </button>
+        </span>
+      </div>
+      <input id="time" type="range" min="0" max="24" step=".1" value="20" />
+    </div>
+    <div id="stops"></div>
+    <div id="unvisitedRow">
+      <label for="landmarkJump">미방문지</label>
+      <select id="landmarkJump">
+        <option value="">장소 선택 후 이동</option>
+      </select>
+    </div>
+    <div id="selected"></div>
+    <div id="err"></div>
+    </div>
+    <footer>
+      Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> ·
+      ODbL · Land: Natural Earth
+    </footer>
+  </aside>
+  <b id="panelClock"></b>
+  <dialog id="placeDialog">
+    <button id="placeClose" type="button" aria-label="닫기">×</button>
+    <div id="placePhoto" class="placePhoto" data-empty="1">사진 없음</div>
+    <div id="placeBody"></div>
+    <button id="placeNext" type="button">다음</button>
+  </dialog>
+  <dialog id="settingsDialog">
+    <button id="settingsClose" type="button" aria-label="닫기">×</button>
+    <label><input id="auto" type="checkbox" /> 3박4일 일정을 2분만에 자동 재싱</label>
+    <label><input id="grid" type="checkbox" /> 500m 타일 경계</label>
+    <label><input id="background" type="checkbox" checked /> 저밀도 배경 / 외곽 연결 표시</label>
+    <label><input id="pins" type="checkbox" checked /> 방문지 번호 표시</label>
+    <label><input id="route" type="checkbox" /> 방문 순서선 (실제 경로 아님)</label>
+    <label><input id="lanes" type="checkbox" /> 차로 그래프 <span id="laneCount"></span></label>
+    <label><input id="walks" type="checkbox" /> 보행 그래프 <span id="walkCount"></span></label>
+    <label><input id="line-kuko" type="checkbox" checked /> 공항선</label>
+    <label><input id="line-hakozaki" type="checkbox" checked /> 하코자키선</label>
+    <label><input id="line-nanakuma" type="checkbox" checked /> 나나쿠마선</label>
+    <label><input id="line-nishitetsu-omuta" type="checkbox" checked /> 니시테쓰 덴진오무타선</label>
+    <label><input id="line-nishitetsu-dazaifu" type="checkbox" checked /> 니시테쓰 다자이후선</label>
+    <label><input id="line-chikuhi" type="checkbox" checked /> 지쿠히선</label>
+  </dialog>
+  <dialog id="helpDialog">
+    <p>
+      방문지를 누르면 해당 지역으로 이동합니다.<br />
+      터치: 드래그 이동 · 두 손가락 회전 · + − 확대 · N 북쪽<br />
+      마우스: 드래그 회전 · 우클릭 이동 · 휠 확대<br />
+      전세계 배경 · 낮과 밤의 하늘<br />
+      원형 바다 최상단에 맞춰 수평선 이동
+    </p>
+    <button type="button" data-close>닫기</button>
+  </dialog>
+  <button id="introSkip" type="button">Skip</button>
+  <div id="zoomControls">
+    <button id="northUp" type="button" aria-label="북쪽을 위로">N</button>
+    <button id="zoomIn" type="button" aria-label="확대">+</button>
+    <button id="zoomOut" type="button" aria-label="축소">−</button>
+  </div>
+  <div id="labels"></div>
+  <div id="radio" hidden>
+    <div id="radioLog" aria-live="polite"></div>
+    <form id="radioForm" hidden>
+      <label for="radioCode">식별코드</label>
+      <input id="radioCode" maxlength="12" autocomplete="off" inputmode="numeric" />
+      <button type="submit">송신</button>
+      <p id="radioHint"></p>
+    </form>
+  </div>
+  <script>
+    const panel = document.querySelector("aside"),
+      toggle = document.querySelector("#panelToggle"),
+      help = document.querySelector("#helpToggle"),
+      helpDialog = document.querySelector("#helpDialog"),
+      settings = document.querySelector("#settingsToggle"),
+      settingsDialog = document.querySelector("#settingsDialog"),
+      placeDialog = document.querySelector("#placeDialog"),
+      mobileMq = matchMedia("(max-width: 600px), (max-width: 900px) and (max-height: 900px)"),
+      stops = document.querySelector("#stops"),
+      unvisited = document.querySelector("#unvisitedRow"),
+      days = document.querySelector(".days"),
+      timeControl = document.querySelector(".timeControl"),
+      panelBody = document.querySelector("#panelBody"),
+      selected = document.querySelector("#selected"),
+      hour = document.querySelector("#hour"),
+      panelClock = document.querySelector("#panelClock");
+    const syncPanelClock = () => {
+      panelClock.textContent = hour.textContent;
+    };
+    syncPanelClock();
+    new MutationObserver(syncPanelClock).observe(hour, { childList: true, characterData: true, subtree: true });
+    function placeTripChrome() {
+      if (mobileMq.matches) {
+        days.after(timeControl);
+        timeControl.after(stops);
+        stops.after(unvisited);
+        return;
+      }
+      panelBody.prepend(timeControl);
+      selected.before(stops);
+      stops.after(unvisited);
+    }
+    placeTripChrome();
+    function syncToggle(closed) {
+      toggle.setAttribute("aria-expanded", String(!closed));
+      toggle.setAttribute("aria-label", closed ? "패널 펼치기" : "패널 접기");
+      toggle.textContent = closed ? "›" : "‹";
+    }
+    function closePopups() {
+      if (helpDialog.open) helpDialog.close();
+      if (placeDialog.open) placeDialog.close();
+      if (settingsDialog.open) settingsDialog.close();
+    }
+    function concealPanelForPopup() {
+      if (!mobileMq.matches || panel.classList.contains("collapsed")) return;
+      panel.classList.add("collapsed");
+      syncToggle(true);
+    }
+    function presentPopup(dialog, other) {
+      const open = dialog.show.bind(dialog);
+      dialog.show = () => {
+        if (mobileMq.matches && other.open) other.close();
+        if (!dialog.open) open();
+        concealPanelForPopup();
+      };
+    }
+    presentPopup(helpDialog, placeDialog);
+    presentPopup(placeDialog, helpDialog);
+    mobileMq.addEventListener("change", () => {
+      placeTripChrome();
+      if (helpDialog.open || placeDialog.open || settingsDialog.open) concealPanelForPopup();
+    });
+    toggle.onclick = () => {
+      const closed = panel.classList.toggle("collapsed");
+      syncToggle(closed);
+      if (closed || mobileMq.matches) closePopups();
+      if (!closed) {
+        document.querySelector("#stops .stop.selected")?.scrollIntoView({
+          block: "nearest",
+          inline: "nearest",
+        });
+      }
+    };
+    function syncSettings(open) {
+      settings.setAttribute("aria-expanded", String(open));
+    }
+    settings.onclick = () => {
+      if (settingsDialog.open) {
+        settingsDialog.close();
+        return;
+      }
+      if (helpDialog.open) helpDialog.close();
+      if (mobileMq.matches && placeDialog.open) placeDialog.close();
+      settingsDialog.show();
+      syncSettings(true);
+      concealPanelForPopup();
+    };
+    settingsDialog.addEventListener("close", () => syncSettings(false));
+    document.querySelector("#settingsClose").onclick = () => settingsDialog.close();
+    help.onclick = () => {
+      if (settingsDialog.open) settingsDialog.close();
+      helpDialog.show();
+    };
+    helpDialog.querySelector("[data-close]").onclick = () => helpDialog.close();
+    document.querySelector("#placeClose").onclick = () => placeDialog.close();
+  </script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./b3d6fa4c269c/a75f892cfecc/5e340309af52/dae9f3cd5d06/d8555745b16b.js",
+        "three/addons/": "./b3d6fa4c269c/a75f892cfecc/5e340309af52/dae9f3cd5d06/842e48780632/"
+      }
+    }
+  </script>
+  <script type="module" src="./b3d6fa4c269c/a75f892cfecc/5e340309af52/3b2337ec1b1a.js"></script>
+</html>
